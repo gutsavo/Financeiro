@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livro-caixa</title>
+<style>
+  :root {
+    --ink: #1F2E2B;
+    --paper: #FAF6EC;
+    --rule: #D8CFB8;
+    --green: #2F5233;
+    --red: #A5433A;
+    --gold: #9C7A2E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .app {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 24px 20px 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+  header .top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  header h1 {
+    font-family: Georgia, serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+  header .month {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+  }
+  .saldo-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+  .saldo-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+    margin: 0 0 2px;
+  }
+  #saldo-display {
+    font-size: 1.9rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--green);
+  }
+  #saldo-display.neg { color: var(--red); }
+  .saldo-edit { display: none; align-items: center; gap: 8px; margin-top: 4px; }
+  .saldo-edit input {
+    width: 130px;
+    font-size: 1.05rem;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--ink);
+    outline: none;
+  }
+  .saldo-edit button {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    cursor: pointer;
+  }
+  .gasto-mes {
+    font-size: 0.75rem;
+    color: var(--red);
+    text-align: right;
+  }
+  main {
+    flex: 1;
+    padding: 16px 20px 96px;
+  }
+  .section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin: 0 0 8px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .row .left { display: flex; flex-direction: column; }
+  .row .desc { font-size: 0.88rem; }
+  .row .mid { font-size: 0.68rem; opacity: 0.5; }
+  .row .value { font-size: 0.88rem; }
+  .empty-msg { font-size: 0.85rem; opacity: 0.6; }
+
+  .goal { margin-bottom: 12px; }
+  .goal-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+  .bar-bg { height: 8px; width: 100%; background: var(--rule); }
+  .bar-fill { height: 8px; background: var(--green); }
+  .goal-amount { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 420px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    background: var(--paper);
+    border-top: 2px solid var(--ink);
+  }
+  nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    padding: 4px 12px;
+    color: #9A9182;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  nav button.active { color: var(--ink); font-weight: 600; }
+  nav button .icon { font-size: 1.15rem; line-height: 1; }
+  nav button .label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .form-row input {
+    font-size: 0.88rem;
+    padding: 7px 8px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    outline: none;
+    font-family: inherit;
+  }
+  .form-row input.desc { flex: 1; }
+  .form-row input.value { width: 100px; font-family: 'IBM Plex Mono', monospace; }
+
+  .installment-toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .installment-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border: 1px solid var(--rule);
+    background: none;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .installment-toggle.active { border-color: var(--gold); color: var(--gold); }
+  .installment-toggle-row input {
+    width: 100px;
+    font-size: 0.75rem;
+    padding: 6px 8px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    outline: none;
+    font-family: 'IBM Plex Mono', monospace;
+    display: none;
+  }
+  .per-parcela-hint { font-size: 0.75rem; opacity: 0.7; margin-bottom: 8px; display: none; }
+  .per-parcela-hint .gold { color: var(--gold); font-family: 'IBM Plex Mono', monospace; }
+
+  .add-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    padding: 9px;
+    margin-bottom: 16px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .installment-card { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dotted var(--rule); }
+  .installment-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; font-size: 0.88rem; }
+  .installment-bottom { display: flex; align-items: center; gap: 8px; }
+  .mini-bar-bg { height: 6px; flex: 1; background: var(--rule); }
+  .mini-bar-fill { height: 6px; background: var(--gold); }
+  .installment-frac { font-size: 0.68rem; opacity: 0.6; white-space: nowrap; }
+  .pay-parcela-btn { font-size: 0.68rem; text-decoration: underline; opacity: 0.7; background: none; border: none; cursor: pointer; color: var(--ink); font-family: inherit; }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 10px;
+    margin-top: 8px;
+    border-top: 2px solid var(--ink);
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .bill-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted var(--rule); }
+  .bill-left { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; font-family: inherit; text-align: left; }
+  .checkbox { width: 20px; height: 20px; border: 1.5px solid var(--rule); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .checkbox.paid { border-color: var(--green); background: var(--green); color: var(--paper); font-size: 0.75rem; }
+  .bill-desc { font-size: 0.88rem; }
+  .bill-desc.paid { text-decoration: line-through; opacity: 0.5; }
+  .bill-due { font-size: 0.68rem; opacity: 0.5; }
+  .bill-value { font-size: 0.88rem; font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="top-row">
+      <h1>Livro-caixa</h1>
+      <span class="month">Julho 2026</span>
+    </div>
+    <div class="saldo-row">
+      <div>
+        <p class="saldo-label">Saldo em conta</p>
+        <button id="saldo-display" class="mono"></button>
+        <div class="saldo-edit" id="saldo-edit">
+          <input type="number" id="saldo-input" class="mono">
+          <button id="saldo-save">ok</button>
+        </div>
+      </div>
+      <div class="gasto-mes mono" id="gasto-mes"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- RESUMO -->
+    <section id="tab-resumo" class="tab-content active">
+      <p class="section-title">Últimos gastos</p>
+      <div id="resumo-gastos"></div>
+
+      <div id="resumo-parceladas-wrap" style="display:none; margin-top:24px;">
+        <p class="section-title">Parceladas ativas este mês</p>
+        <div id="resumo-parceladas"></div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <p class="section-title">Contas a vencer</p>
+        <div id="resumo-contas"></div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <p class="section-title">Metas</p>
+        <div id="resumo-metas"></div>
+      </div>
+    </section>
+
+    <!-- GASTOS -->
+    <section id="tab-gastos" class="tab-content">
+      <p class="section-title">Novo gasto</p>
+      <div class="form-row">
+        <input type="text" id="new-desc" class="desc" placeholder="Descrição">
+        <input type="number" id="new-value" class="value" placeholder="R$">
+      </div>
+      <div class="installment-toggle-row">
+        <button id="installment-toggle" class="installment-toggle">⧉ Compra parcelada</button>
+        <input type="number" id="install-count" placeholder="nº parcelas">
+      </div>
+      <p class="per-parcela-hint" id="per-parcela-hint"></p>
+      <button class="add-btn" id="add-expense-btn">+ Adicionar</button>
+
+      <div id="parceladas-section" style="display:none;">
+        <p class="section-title">Compras parceladas</p>
+        <div id="parceladas-list"></div>
+      </div>
+
+      <p class="section-title">Todos os gastos</p>
+      <div id="gastos-list"></div>
+      <div class="total-row">
+        <span>Total</span>
+        <span class="mono" id="gastos-total" style="color: var(--red);"></span>
+      </div>
+    </section>
+
+    <!-- CONTAS -->
+    <section id="tab-contas" class="tab-content">
+      <p class="section-title">Contas do mês</p>
+      <div id="contas-list"></div>
+    </section>
+
+    <!-- METAS -->
+    <section id="tab-metas" class="tab-content">
+      <p class="section-title">Metas de economia</p>
+      <div id="metas-list"></div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="nav-btn active" data-tab="resumo"><span class="icon">▦</span><span class="label">Resumo</span></button>
+    <button class="nav-btn" data-tab="gastos"><span class="icon">🧾</span><span class="label">Gastos</span></button>
+    <button class="nav-btn" data-tab="contas"><span class="icon">💳</span><span class="label">Contas</span></button>
+    <button class="nav-btn" data-tab="metas"><span class="icon">◎</span><span class="label">Metas</span></button>
+  </nav>
+
+</div>
+
+<script>
+// ---------- estado ----------
+let expenses = [
+  { id: 1, desc: "Mercado", cat: "Alimentação", value: 187.4, date: "08/07" },
+  { id: 2, desc: "Uber", cat: "Transporte", value: 24.9, date: "08/07" },
+  { id: 3, desc: "Farmácia", cat: "Saúde", value: 63.2, date: "09/07" },
+  { id: 4, desc: "Restaurante", cat: "Alimentação", value: 58.0, date: "09/07" },
+];
+
+let bills = [
+  { id: 1, desc: "Aluguel", value: 950, due: "15/07", paid: false },
+  { id: 2, desc: "Internet", value: 99.9, due: "12/07", paid: false },
+  { id: 3, desc: "Cartão de crédito", value: 430.5, due: "10/07", paid: true },
+  { id: 4, desc: "Academia", value: 89.9, due: "20/07", paid: false },
+];
+
+let goals = [
+  { id: 1, name: "Reserva de emergência", target: 5000, saved: 2100 },
+  { id: 2, name: "Viagem", target: 1800, saved: 450 },
+];
+
+let installments = [
+  { id: 1, desc: "Notebook", total: 3600, count: 12, current: 4 },
+  { id: 2, desc: "Sofá", total: 1200, count: 6, current: 2 },
+];
+
+function calcSaldoInicial() {
+  const rendaInicial = 4000; // mock: dinheiro que entrou na conta
+  const gastos = expenses.reduce((s, e) => s + e.value, 0);
+  const contasPagas = bills.filter(b => b.paid).reduce((s, b) => s + b.value, 0);
+  const parcelasJaPagas = installments.reduce((s, i) => s + (i.current - 1) * (i.total / i.count), 0);
+  return rendaInicial - gastos - contasPagas - parcelasJaPagas;
+}
+
+let saldo = calcSaldoInicial();
+let isInstallment = false;
+
+function money(v) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// ---------- render ----------
+function render() {
+  renderHeader();
+  renderResumo();
+  renderGastos();
+  renderContas();
+  renderMetas();
+}
+
+function renderHeader() {
+  const el = document.getElementById("saldo-display");
+  el.textContent = money(saldo);
+  el.classList.toggle("neg", saldo < 0);
+  const totalMes = expenses.reduce((s, e) => s + e.value, 0);
+  document.getElementById("gasto-mes").textContent = "gastos: " + money(totalMes);
+}
+
+function rowHTML(desc, mid, value, color) {
+  return `<div class="row">
+    <div class="left"><span class="desc">${desc}</span>${mid ? `<span class="mid">${mid}</span>` : ""}</div>
+    <span class="value mono" style="color:${color}">${value}</span>
+  </div>`;
+}
+
+function renderResumo() {
+  const gastosEl = document.getElementById("resumo-gastos");
+  gastosEl.innerHTML = expenses.slice(0, 4).map(e =>
+    rowHTML(e.desc, e.cat, money(e.value), "var(--red)")
+  ).join("");
+
+  const active = installments.filter(i => i.current <= i.count);
+  const wrap = document.getElementById("resumo-parceladas-wrap");
+  if (active.length > 0) {
+    wrap.style.display = "block";
+    document.getElementById("resumo-parceladas").innerHTML = active.map(i =>
+      rowHTML(i.desc, `parcela ${i.current}/${i.count}`, money(i.total / i.count), "var(--gold)")
+    ).join("");
+  } else {
+    wrap.style.display = "none";
+  }
+
+  const pending = bills.filter(b => !b.paid);
+  const contasEl = document.getElementById("resumo-contas");
+  contasEl.innerHTML = pending.length === 0
+    ? `<p class="empty-msg">Tudo pago. Nada pendente.</p>`
+    : pending.map(b => rowHTML(b.desc, `vence ${b.due}`, money(b.value), "var(--gold)")).join("");
+
+  const metasEl = document.getElementById("resumo-metas");
+  metasEl.innerHTML = goals.map(g => {
+    const pct = Math.min(100, (g.saved / g.target) * 100);
+    return `<div class="goal">
+      <div class="goal-top"><span>${g.name}</span><span class="mono">${money(g.saved)} / ${money(g.target)}</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderGastos() {
+  const total = expenses.reduce((s, e) => s + e.value, 0);
+  document.getElementById("gastos-list").innerHTML = expenses.map(e =>
+    rowHTML(e.desc, `${e.cat} · ${e.date}`, money(e.value), "var(--red)")
+  ).join("");
+  document.getElementById("gastos-total").textContent = money(total);
+
+  const section = document.getElementById("parceladas-section");
+  if (installments.length > 0) {
+    section.style.display = "block";
+    document.getElementById("parceladas-list").innerHTML = installments.map(i => {
+      const done = i.current > i.count;
+      const pct = Math.min(100, ((i.current - 1) / i.count) * 100);
+      return `<div class="installment-card">
+        <div class="installment-top">
+          <span>${i.desc}</span>
+          <span class="mono" style="color:${done ? "var(--green)" : "var(--gold)"}">
+            ${done ? "quitado" : money(i.total / i.count) + " /mês"}
+          </span>
+        </div>
+        <div class="installment-bottom">
+          <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${pct}%; background:${done ? "var(--green)" : "var(--gold)"}"></div></div>
+          <span class="installment-frac">${done ? `${i.count}/${i.count}` : `${i.current}/${i.count}`}</span>
+          ${!done ? `<button class="pay-parcela-btn" data-id="${i.id}">pagar parcela</button>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+    document.querySelectorAll(".pay-parcela-btn").forEach(btn => {
+      btn.addEventListener("click", () => advanceInstallment(parseInt(btn.dataset.id, 10)));
+    });
+  } else {
+    section.style.display = "none";
+  }
+}
+
+function renderContas() {
+  document.getElementById("contas-list").innerHTML = bills.map(b => `
+    <div class="bill-row">
+      <button class="bill-left" data-id="${b.id}">
+        <span class="checkbox ${b.paid ? "paid" : ""}">${b.paid ? "✓" : ""}</span>
+        <div>
+          <p class="bill-desc ${b.paid ? "paid" : ""}">${b.desc}</p>
+          <p class="bill-due">${!b.paid ? "⚠ " : ""}vence ${b.due}</p>
+        </div>
+      </button>
+      <span class="bill-value" style="color:${b.paid ? "var(--green)" : "var(--gold)"}">${money(b.value)}</span>
+    </div>
+  `).join("");
+  document.querySelectorAll(".bill-left").forEach(btn => {
+    btn.addEventListener("click", () => toggleBill(parseInt(btn.dataset.id, 10)));
+  });
+}
+
+function renderMetas() {
+  document.getElementById("metas-list").innerHTML = goals.map(g => {
+    const pct = Math.min(100, (g.saved / g.target) * 100);
+    return `<div class="goal" style="padding-bottom:16px; border-bottom:1px dotted var(--rule); margin-bottom:20px;">
+      <div class="goal-top"><span style="font-weight:500;">${g.name}</span><span style="color:var(--green); font-size:0.75rem;">${pct.toFixed(0)}%</span></div>
+      <div class="bar-bg" style="height:10px;"><div class="bar-fill" style="width:${pct}%; height:10px;"></div></div>
+      <p class="goal-amount mono">${money(g.saved)} de ${money(g.target)}</p>
+    </div>`;
+  }).join("");
+}
+
+// ---------- ações ----------
+function addExpense() {
+  const desc = document.getElementById("new-desc").value.trim();
+  const valueStr = document.getElementById("new-value").value;
+  if (!desc || !valueStr) return;
+  const value = parseFloat(valueStr);
+
+  if (isInstallment) {
+    const countStr = document.getElementById("install-count").value;
+    if (!countStr) return;
+    const count = parseInt(countStr, 10);
+    installments.unshift({ id: Date.now(), desc, total: value, count, current: 1 });
+    saldo -= value / count;
+  } else {
+    expenses.unshift({ id: Date.now(), desc, cat: "Outros", value, date: "hoje" });
+    saldo -= value;
+  }
+
+  document.getElementById("new-desc").value = "";
+  document.getElementById("new-value").value = "";
+  document.getElementById("install-count").value = "";
+  setInstallmentMode(false);
+  render();
+}
+
+function toggleBill(id) {
+  const bill = bills.find(b => b.id === id);
+  if (!bill) return;
+  saldo += bill.paid ? bill.value : -bill.value;
+  bill.paid = !bill.paid;
+  render();
+}
+
+function advanceInstallment(id) {
+  const inst = installments.find(i => i.id === id);
+  if (!inst || inst.current > inst.count) return;
+  saldo -= inst.total / inst.count;
+  inst.current += 1;
+  render();
+}
+
+function setInstallmentMode(on) {
+  isInstallment = on;
+  const btn = document.getElementById("installment-toggle");
+  const countInput = document.getElementById("install-count");
+  btn.classList.toggle("active", on);
+  countInput.style.display = on ? "block" : "none";
+  updatePerParcelaHint();
+}
+
+function updatePerParcelaHint() {
+  const hint = document.getElementById("per-parcela-hint");
+  const valueStr = document.getElementById("new-value").value;
+  const countStr = document.getElementById("install-count").value;
+  if (isInstallment && valueStr && countStr) {
+    const per = parseFloat(valueStr) / parseInt(countStr, 10);
+    hint.style.display = "block";
+    hint.innerHTML = `${countStr}x de <span class="gold">${money(per)}</span>`;
+  } else {
+    hint.style.display = "none";
+  }
+}
+
+// ---------- eventos ----------
+document.querySelectorAll(".nav-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+document.getElementById("installment-toggle").addEventListener("click", () => setInstallmentMode(!isInstallment));
+document.getElementById("new-value").addEventListener("input", updatePerParcelaHint);
+document.getElementById("install-count").addEventListener("input", updatePerParcelaHint);
+document.getElementById("add-expense-btn").addEventListener("click", addExpense);
+
+document.getElementById("saldo-display").addEventListener("click", () => {
+  document.getElementById("saldo-display").style.display = "none";
+  const editEl = document.getElementById("saldo-edit");
+  editEl.style.display = "flex";
+  const input = document.getElementById("saldo-input");
+  input.value = saldo.toFixed(2);
+  input.focus();
+});
+
+function saveSaldo() {
+  const val = parseFloat(document.getElementById("saldo-input").value.replace(",", "."));
+  if (!isNaN(val)) saldo = val;
+  document.getElementById("saldo-edit").style.display = "none";
+  document.getElementById("saldo-display").style.display = "inline-block";
+  render();
+}
+
+document.getElementById("saldo-save").addEventListener("click", saveSaldo);
+document.getElementById("saldo-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") saveSaldo();
+});
+
+// ---------- inicialização ----------
+render();
+</script>
+</body>
+</html>
